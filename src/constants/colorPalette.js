@@ -1,0 +1,106 @@
+export const SOMPIX_COLORS = {
+  SKY_BLUE: '#4D91FF', // Canlı Gökyüzü Mavisi
+  DEEP_OCEAN: '#2E5799', // Derin Okyanus Mavisi
+  SUNSET_PINK: '#FF4D77', // Günbatımı Pembesi
+  BERRY_WINE: '#992E72', // Böğürtlen Şarabı
+  ROYAL_PURPLE: '#944DFF', // Kraliyet Moru
+  PLUM_VIOLET: '#622E99', // Erik Moru
+  AQUA_BLUE: '#4DCAFF', // Tropikal Aqua Mavisi
+  TEAL_WAVE: '#2E7299', // Deniz Dalga Yeşili
+}
+
+export const PRIMARY_COLORS = {
+  SOMPO_RED: '#df082a',
+  SOMPO_WHITE: '#ffffff',
+  SOMPO_LIGHT_PLATINUM: '#eff4f5',
+  SOMPO_LIGHT_RED: '#fff1f1',
+  SOMPO_BLACK: '#000000',
+}
+
+export const SECONDARY_COLORS = {
+  SOMPO_DARK_RED: '#9b2222',
+  SOMPO_MEDIUM_RED: '#eeaaaa',
+  SOMPO_MEDIUM_PLATINUM: '#c8ced2',
+  SOMPO_DARK_PLATINUM: '#94989c',
+}
+
+export const TERTIARY_COLORS = {
+  SOMPO_DARK_PURPLE: '#874ca9',
+  SOMPO_MEDIUM_PURPLE: '#a780d1',
+  SOMPO_LIGHT_PURPLE: '#d2bdff',
+  SOMPO_DARK_ORANGE: '#ae6a19',
+  SOMPO_MEDIUM_ORANGE: '#fc9f31',
+  SOMPO_LIGHT_ORANGE: '#ffc47e',
+}
+
+export const BUTTON_COLORS = {
+  EXCEL_GREEN: {
+    LIGHT: {
+      COLOR: '#128045',
+      BORDER_COLOR: '#4FB767',
+      HOVER_BACKGROUND_COLOR: '#EBF7EE',
+      ACTIVE_BACKGROUND_COLOR: '#C4E7CC',
+    },
+    DARK: {
+      COLOR: '#63BF78',
+      BORDER_COLOR: '#4FB767',
+      HOVER_BACKGROUND_COLOR: '#183634',
+      ACTIVE_BACKGROUND_COLOR: '#194336',
+    },
+  },
+}
+
+export const TEXT_COLOR = {
+  LIGHT: '#2f2f30',
+  DARK: '#ffffff',
+}
+
+export const COMPONENT_LIGHT_COLORS = {
+  SURFACE_0: '#FFFFFF',
+  SURFACE_50: '#EBEDEE',
+  SURFACE_100: '#D4D5D6',
+  SURFACE_200: '#BCBEBE',
+  SURFACE_300: '#A5A6A7',
+  SURFACE_400: '#8D8E8F',
+  SURFACE_500: '#767777',
+  SURFACE_600: '#5E5F5F',
+  SURFACE_700: '#474747',
+  SURFACE_800: '#2F2F30',
+  SURFACE_900: '#181818',
+  SURFACE_950: '#000000',
+}
+
+export const COMPONENT_DARK_COLORS = {
+  SURFACE_50: '#EFF0F1',
+  SURFACE_100: '#DFE0E3',
+  SURFACE_200: '#BFC2C7',
+  SURFACE_300: '#9FA3AB',
+  SURFACE_400: '#7E858F',
+  SURFACE_500: '#5E6673',
+  SURFACE_600: '#3E4857',
+  SURFACE_700: '#1E293B',
+  SURFACE_800: '#192335',
+  SURFACE_900: '#141D30',
+  SURFACE_950: '#0f172a',
+  PRIMARY: {
+    COLOR: '#4D91FF',
+    HOVER_COLOR: '#4582E4',
+    ACTIVE_COLOR: '#3E73CA',
+  },
+}
+
+export const STATUS_COLORS_LIGHT = {
+  SUCCESS: '#15803d',
+  DANGER: '#C41227',
+}
+
+export const STATUS_COLORS_DARK = {
+  SUCCESS: '#86efac',
+  DANGER: SECONDARY_COLORS.SOMPO_MEDIUM_RED,
+}
+
+export const TERM_COLORS = {
+  TRAFFIC: SOMPIX_COLORS.SUNSET_PINK,
+  CASCO: SOMPIX_COLORS.ROYAL_PURPLE,
+  OFFER: '#7987FF',
+}

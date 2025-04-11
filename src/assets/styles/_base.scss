@@ -1,0 +1,84 @@
+@use "variables";
+
+html {
+  font-size: variables.$project-font-size;
+}
+
+body {
+  min-height: 100vh;
+  font-family: "Interphases_Pro", sans-serif;
+  font-size: variables.$font-size-base;
+  font-weight: variables.$font-weight-regular;
+  color: variables.$text-color;
+  background-color: variables.$layout-background;
+  padding: 0;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+#app {
+  width: 100%;
+  height: 100%;
+  margin: 0 auto;
+  line-height: normal;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+a {
+  text-decoration: underline;
+}
+
+::-webkit-scrollbar {
+  width: variables.$scrollbar-width;
+  height: variables.$scrollbar-height;
+
+  &-track {
+    box-shadow: inset 0 0 3px variables.$scrollbar-track-color;
+    border-radius: variables.$border-radius-md;
+  }
+
+  &-thumb {
+    background: variables.$scrollbar-thumb-color;
+    border-radius: variables.$border-radius-md;
+
+    &:hover {
+      background: variables.$scrollbar-thumb-hover-color;
+    }
+  }
+}
+
+/* Chrome, Safari, Edge, Opera */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.theme-dark {
+  body {
+    color: variables.$text-color-dark;
+    background-color: variables.$layout-background-dark;
+  }
+
+  ::-webkit-scrollbar {
+    &-track {
+      box-shadow: inset 0 0 3px variables.$scrollbar-track-color-dark;
+    }
+
+    &-thumb {
+      background: variables.$scrollbar-thumb-color-dark;
+
+      &:hover {
+        background: variables.$scrollbar-thumb-hover-color-dark;
+      }
+    }
+  }
+}

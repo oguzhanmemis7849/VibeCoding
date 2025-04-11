@@ -1,0 +1,55 @@
+@font-face {
+  font-family: 'Interphases_Pro';
+  src:
+    url('../fonts/woff2/TT_Interphases_Pro_Light.woff2') format('woff2'),
+    url('../fonts/woff/TT_Interphases_Pro_Light.woff') format('woff'),
+    url('../fonts/ttf/TT_Interphases_Pro_Light.ttf') format('truetype'),
+    url('../fonts/otf/TT_Interphases_Pro_Light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Interphases_Pro';
+  src:
+    url('../fonts/woff2/TT_Interphases_Pro_Regular.woff2') format('woff2'),
+    url('../fonts/woff/TT_Interphases_Pro_Regular.woff') format('woff'),
+    url('../fonts/ttf/TT_Interphases_Pro_Regular.ttf') format('truetype'),
+    url('../fonts/otf/TT_Interphases_Pro_Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Interphases_Pro';
+  src:
+    url('../fonts/woff2/TT_Interphases_Pro_Medium.woff2') format('woff2'),
+    url('../fonts/woff/TT_Interphases_Pro_Medium.woff') format('woff'),
+    url('../fonts/ttf/TT_Interphases_Pro_Medium.ttf') format('truetype'),
+    url('../fonts/otf/TT_Interphases_Pro_Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Interphases_Pro';
+  src:
+    url('../fonts/woff2/TT_Interphases_Pro_Bold.woff2') format('woff2'),
+    url('../fonts/woff/TT_Interphases_Pro_Bold.woff') format('woff'),
+    url('../fonts/ttf/TT_Interphases_Pro_Bold.ttf') format('truetype'),
+    url('../fonts/otf/TT_Interphases_Pro_Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: block;
+}
+
+@mixin typography($size, $weight) {
+  font-size: $size;
+  font-weight: $weight;
+  margin: 0;
+  padding: 0;
+  line-height: normal;
+}

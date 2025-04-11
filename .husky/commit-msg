@@ -1,0 +1,1 @@
+npx commitlint --edit "$1" || { echo "The commit message is invalid. Please use a valid format. You can review the 'commitlint.config.js' file for guidance."; exit 1; }

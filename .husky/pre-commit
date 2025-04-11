@@ -1,0 +1,1 @@
+npx eslint . --ext .vue,.js,.jsx,.cjs,.mjs || { echo "ESLint errors detected. You can resolve these errors manually or by running the lint script before committing."; exit 1; }

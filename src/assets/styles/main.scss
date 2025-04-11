@@ -1,0 +1,48 @@
+@use "base";
+@use "variables";
+@use "typography";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+h1 {
+  @include typography(variables.$font-size-h1, variables.$font-weight-bold);
+  color: variables.$text-color;
+}
+
+h2 {
+  @include typography(variables.$font-size-h2, variables.$font-weight-bold);
+  color: variables.$text-color;
+}
+
+h3 {
+  @include typography(variables.$font-size-h3, variables.$font-weight-bold);
+  color: variables.$text-color;
+}
+
+h4 {
+  @include typography(variables.$font-size-h4, variables.$font-weight-bold);
+  color: variables.$text-color;
+}
+
+h5 {
+  @include typography(variables.$font-size-h5, variables.$font-weight-bold);
+  color: variables.$text-color;
+}
+
+h6 {
+  @include typography(variables.$font-size-h6, variables.$font-weight-bold);
+  color: variables.$text-color;
+}
+
+.theme-dark {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: variables.$text-color-dark;
+  }
+}
