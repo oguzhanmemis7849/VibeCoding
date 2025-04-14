@@ -45,6 +45,8 @@ export function configureLanguage(editor) {
 
   // 4. Gelişmiş IntelliSense (Completion) sağlayıcısını ekle
   monaco.languages.registerCompletionItemProvider("expressionLanguage", {
+    triggerCharacters: ["(", ")", " ", ".", "'", '"', "=", ">", "<"],
+
     async provideCompletionItems(model, position) {
       // Mevcut kelime bilgisini ve pozisyonunu elde et
       const wordInfo = model.getWordUntilPosition(position);
@@ -60,7 +62,9 @@ export function configureLanguage(editor) {
           kind: monaco.languages.CompletionItemKind.Variable,
           insertText: variable,
           detail: "Değişken",
+          documentation: { value: `**${variable}** değişkeni` },
           sortText: "1",
+          filterText: variable.toLowerCase(),
           range: {
             startLineNumber: position.lineNumber,
             startColumn: wordInfo.startColumn,
@@ -78,7 +82,9 @@ export function configureLanguage(editor) {
           kind: monaco.languages.CompletionItemKind.Keyword,
           insertText: keyword,
           detail: "Anahtar Kelime",
+          documentation: { value: `**${keyword}** anahtar kelimesi` },
           sortText: "2",
+          filterText: keyword.toLowerCase(),
           range: {
             startLineNumber: position.lineNumber,
             startColumn: wordInfo.startColumn,
@@ -96,7 +102,9 @@ export function configureLanguage(editor) {
           kind: monaco.languages.CompletionItemKind.Operator,
           insertText: op,
           detail: "Operatör",
+          documentation: { value: `**${op}** operatörü` },
           sortText: "3",
+          filterText: op,
           range: {
             startLineNumber: position.lineNumber,
             startColumn: wordInfo.startColumn,
@@ -106,44 +114,93 @@ export function configureLanguage(editor) {
         }))
       );
 
-      // OpenAI önerileri (eğer servis mevcutsa)
+      // Bağlam tabanlı kod parçacıkları (snippets)
+      if (textUntilPosition.trim() === "" || textUntilPosition.endsWith(" ")) {
+        suggestions.push({
+          label: "eğer koşul",
+          kind: monaco.languages.CompletionItemKind.Snippet,
+          insertText: "eğer (${1:değişken} == ${2:değer})",
+          insertTextRules:
+            monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+          detail: "Koşul Şablonu",
+          documentation: { value: "Basit bir koşul ifadesi oluşturur" },
+          sortText: "0",
+          range: {
+            startLineNumber: position.lineNumber,
+            startColumn: wordInfo.startColumn,
+            endLineNumber: position.lineNumber,
+            endColumn: wordInfo.endColumn,
+          },
+        });
+      }
+
+      // OpenAI önerileri (eğer servis mevcutsa) - asenkron olarak yükle, başlangıç önerilerini geciktirme
+      let aiSuggestions = [];
       if (openAIService) {
         try {
           const context = textUntilPosition.slice(-100);
-          const aiResponse = await openAIService.generateCompletion(
-            "Devamı için koşullu ifade önerisi yap",
-            context
-          );
 
-          const aiSuggestions = aiResponse
-            .split("\n")
-            .map((suggestion) => suggestion.trim())
-            .filter((suggestion) => suggestion.length > 0)
-            .map((suggestion, index) => ({
-              label: suggestion,
-              kind: monaco.languages.CompletionItemKind.Text,
-              insertText: suggestion,
-              detail: "AI Önerisi",
-              documentation: { value: "OpenAI tarafından önerildi" },
-              sortText: `3${index.toString().padStart(2, "0")}`,
-              preselect: index === 0,
-              range: {
-                startLineNumber: position.lineNumber,
-                startColumn: wordInfo.startColumn,
-                endLineNumber: position.lineNumber,
-                endColumn: wordInfo.endColumn,
-              },
-            }));
+          // Önce mevcut önerileri döndür, sonra AI önerilerini ekleyelim
+          setTimeout(async () => {
+            try {
+              const aiResponse = await openAIService.generateCompletion(
+                "Devamı için koşullu ifade önerisi yap",
+                context
+              );
 
-          suggestions.push(...aiSuggestions);
+              aiSuggestions = aiResponse
+                .split("\n")
+                .map((suggestion) => suggestion.trim())
+                .filter((suggestion) => suggestion.length > 0)
+                .map((suggestion, index) => ({
+                  label: suggestion,
+                  kind: monaco.languages.CompletionItemKind.Text,
+                  insertText: suggestion,
+                  detail: "AI Önerisi",
+                  documentation: { value: "OpenAI tarafından önerildi" },
+                  sortText: `4${index.toString().padStart(2, "0")}`,
+                  preselect: index === 0,
+                  range: {
+                    startLineNumber: position.lineNumber,
+                    startColumn: wordInfo.startColumn,
+                    endLineNumber: position.lineNumber,
+                    endColumn: wordInfo.endColumn,
+                  },
+                }));
+
+              // Editörün öneri listesini güncelle
+              if (aiSuggestions.length > 0) {
+                editor.trigger("keyboard", "editor.action.triggerSuggest", {});
+              }
+            } catch (error) {
+              console.warn("OpenAI öneri hatası:", error);
+            }
+          }, 10);
         } catch (error) {
           console.warn("OpenAI öneri hatası:", error);
         }
       }
 
-      return { suggestions, incomplete: false };
+      return {
+        suggestions,
+        incomplete: openAIService !== null, // Eğer OpenAI varsa, daha fazla öneri gelebilir
+      };
     },
+
     resolveCompletionItem(item) {
+      // Detaylı bilgileri asenkron olarak doldur
+      if (
+        item.documentation &&
+        typeof item.documentation.value === "string" &&
+        item.documentation.value.indexOf("**") !== -1
+      ) {
+        // Markdown formatını zenginleştir
+        const enhanced = item.documentation.value.replace(
+          /\*\*(.*?)\*\*/g,
+          "**$1**\n\n"
+        );
+        item.documentation = { value: enhanced, isTrusted: true };
+      }
       return item;
     },
   });

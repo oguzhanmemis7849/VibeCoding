@@ -25,12 +25,36 @@ export function createMonacoEditor(
     wordWrap: "on", // Kelime sarma
     lineNumbers: "on", // Satır numaralarını gösterme
     contextmenu: true, // Sağ tık menüsünü aktifleştirme
-    // quickSuggestions: true, // Hızlı önerileri etkinleştirme
-    // suggestOnTriggerCharacters: true, // Önerileri tetikleyici karakterlerde gösterme
-    // tabCompletion: "on",
-    // parameterHints: {
-    //   enabled: true, // Fonksiyon parametre ipuçlarını etkinleştirme
-    // },
+
+    // IntelliSense Ayarları
+    quickSuggestions: {
+      other: true,
+      comments: true,
+      strings: true,
+    },
+    suggestOnTriggerCharacters: true,
+    acceptSuggestionOnCommitCharacter: true,
+    acceptSuggestionOnEnter: "on",
+    tabCompletion: "on",
+
+    // Parametre ipuçları ve imzalar
+    parameterHints: {
+      enabled: true,
+      cycle: true,
+    },
+
+    // Öneri kutusu davranışı ve görünümü
+    suggest: {
+      showIcons: true,
+      filterGraceful: true,
+      localityBonus: true,
+      shareSuggestSelections: true,
+      snippetsPreventQuickSuggestions: false,
+      showMethods: true,
+      showFunctions: true,
+      showVariables: true,
+      showKeywords: true,
+    },
   });
 
   configureLanguage(editorInstance);
