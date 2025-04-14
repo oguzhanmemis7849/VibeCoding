@@ -295,20 +295,8 @@ export function configureLanguage(editor) {
   // 8. Yeniden tokenizasyon için model update mantığı
   editor.onDidChangeModelContent((event) => {
     if (event.isFlush) return;
-    const model = editor.getModel();
-    if (model) {
-      const currentValue = model.getValue();
-      if (currentValue !== model._lastTokenizationValue) {
-        model._lastTokenizationValue = currentValue;
-        const position = editor.getPosition();
-        const selection = editor.getSelection();
-        setTimeout(() => {
-          // Bazı durumlarda, ekstra bir güncelleme tetiklemesini engellemek için ek bayrak kullanılabilir.
-          model.setValue(currentValue);
-          if (position) editor.setPosition(position);
-          if (selection) editor.setSelection(selection);
-        }, 0);
-      }
-    }
+    // Tokenizasyon otomatik olarak yapılır,
+    // herhangi bir manuel müdahaleye gerek yoktur.
+    // Monaco Editor son sürümlerinde tokenization.tokenizeViewport metodu kaldırıldı.
   });
 }

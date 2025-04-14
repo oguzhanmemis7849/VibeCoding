@@ -26,6 +26,9 @@ export function createMonacoEditor(
     lineNumbers: "on", // Satır numaralarını gösterme
     contextmenu: true, // Sağ tık menüsünü aktifleştirme
 
+    // Geri alma ve ileri alma desteği için ayarlar
+    undoRedoOptions: { undoRedoLimit: 100 },
+
     // IntelliSense Ayarları
     quickSuggestions: {
       other: true,

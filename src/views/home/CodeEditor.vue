@@ -12,17 +12,7 @@ eğer (araç modeli === 'Toyota')
 </script>
 
 <template>
-  <div class="editor-view">
+  <div class="flex flex-col gap-2">
     <MonacoEditor v-model="editorContent" />
   </div>
 </template>
-
-<style scoped lang="scss">
-.editor-view {
-  .output {
-    margin-top: 20px;
-    padding: 10px;
-    border-radius: 4px;
-  }
-}
-</style>

@@ -3,6 +3,7 @@ import "@/assets/styles/main.scss";
 import { createApp } from "vue";
 import { createPinia } from "pinia";
 import { setupPrimeVue } from "@Sompo-Sigorta-A-S/sompo-ui-kit";
+import "primeicons/primeicons.css";
 import Icon from "@/components/Icon.vue";
 import App from "./App.vue";
 import router from "./router";
