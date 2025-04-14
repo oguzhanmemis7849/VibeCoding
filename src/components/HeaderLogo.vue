@@ -8,13 +8,13 @@ const { isDark } = useTheme();
   <div class="header-logo">
     <img
       v-if="isDark"
-      src="@/assets/images/Sompo-Logo-Dark.svg"
+      src="@/assets/images/Vibe-Coder-Logo.png"
       alt="Sompix-Logo-Dark"
       class="header-logo__img"
     />
     <img
       v-else
-      src="@/assets/images/Sompo-Logo-Light.svg"
+      src="@/assets/images/Vibe-Coder-Logo.png"
       alt="Sompix-Logo-Light"
       class="header-logo__img"
     />

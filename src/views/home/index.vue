@@ -4,8 +4,8 @@ import CodeEditor from "./CodeEditor.vue";
 </script>
 
 <template>
-  <div class="flex gap-2 items-center">
-    <CodeEditor class="w-1/2 h-full" />
-    <AIChatBot class="w-1/2 h-full" />
+  <div class="grid grid-cols-3 gap-2">
+    <CodeEditor class="col-span-2" />
+    <AIChatBot class="col-span-1" />
   </div>
 </template>

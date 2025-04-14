@@ -5,6 +5,8 @@ import {
   TERTIARY_COLORS,
   COMPONENT_DARK_COLORS,
 } from "@/constants";
+import { watch } from "vue";
+import * as monaco from "monaco-editor";
 
 const { isDark } = useTheme();
 
@@ -20,6 +22,16 @@ const toggleSwitchTokens = {
     },
   },
 };
+
+watch(
+  () => isDark.value,
+  (newValue) => {
+    newValue
+      ? monaco.editor.setTheme("vs-dark")
+      : monaco.editor.setTheme("vs-light");
+  },
+  { immediate: true }
+);
 </script>
 
 <template>
