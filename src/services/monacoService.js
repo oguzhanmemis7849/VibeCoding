@@ -1,5 +1,6 @@
 import * as monaco from "monaco-editor";
 import { useTheme } from "@/composables/useTheme";
+import { configureLanguage } from "./expressionLanguage.js";
 
 const { isDark } = useTheme();
 
@@ -15,7 +16,7 @@ export function createMonacoEditor(
   value = "",
   language = "expressionLanguage"
 ) {
-  return monaco.editor.create(editor, {
+  const editorInstance = monaco.editor.create(editor, {
     value,
     language,
     theme: isDark.value ? "vs-dark" : "vs-light",
@@ -24,5 +25,15 @@ export function createMonacoEditor(
     wordWrap: "on", // Kelime sarma
     lineNumbers: "on", // Satır numaralarını gösterme
     contextmenu: true, // Sağ tık menüsünü aktifleştirme
+    // quickSuggestions: true, // Hızlı önerileri etkinleştirme
+    // suggestOnTriggerCharacters: true, // Önerileri tetikleyici karakterlerde gösterme
+    // tabCompletion: "on",
+    // parameterHints: {
+    //   enabled: true, // Fonksiyon parametre ipuçlarını etkinleştirme
+    // },
   });
+
+  configureLanguage(editorInstance);
+
+  return editorInstance;
 }
