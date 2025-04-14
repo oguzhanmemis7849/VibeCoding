@@ -1,6 +1,7 @@
 <script setup>
 import { onMounted, onBeforeUnmount, ref, watch } from "vue";
 import { createMonacoEditor } from "@/services";
+import openAIService from "@/services/openaiService";
 
 const props = defineProps({
   modelValue: {
@@ -21,6 +22,9 @@ let editorInstance = null;
 // Geri al ve ileri al butonlarının durumları
 const canUndo = ref(false);
 const canRedo = ref(false);
+
+// AI işleme durumu
+const isAIProcessing = ref(false);
 
 // Buton durumlarını güncelleme fonksiyonu
 const updateButtonStates = () => {
@@ -43,6 +47,36 @@ const handleRedo = () => {
   if (editorInstance && canRedo.value) {
     editorInstance.trigger("keyboard", "redo", null);
     updateButtonStates();
+  }
+};
+
+// AI ile düzenle fonksiyonu
+const handleAIFormat = async () => {
+  if (editorInstance && !isAIProcessing.value) {
+    try {
+      isAIProcessing.value = true;
+
+      const currentText = editorInstance.getValue();
+      if (!currentText.trim()) {
+        // Boş metin için işlem yapma
+        return;
+      }
+
+      // OpenAI servisi ile metni formatla
+      const formattedText = await openAIService.formatText(currentText);
+
+      // Formatlanan metni editöre ekle
+      if (formattedText) {
+        editorInstance.setValue(formattedText);
+        // Değişikliği parent bileşene ilet
+        emit("update:modelValue", formattedText);
+      }
+    } catch (error) {
+      console.error("AI formatlama hatası:", error);
+      // Hata durumunda kullanıcıya bildirim gösterilebilir
+    } finally {
+      isAIProcessing.value = false;
+    }
   }
 };
 
@@ -105,7 +139,13 @@ onBeforeUnmount(() => {
       </div>
       <Button severity="success" icon="pi pi-save" label="Kaydet" />
       <Button severity="info" icon="pi pi-upload" label="Yükle" />
-      <Button icon="pi pi-slack" label="AI ile Düzenle" />
+      <Button
+        icon="pi pi-slack"
+        label="AI ile Düzenle"
+        :loading="isAIProcessing"
+        :disabled="isAIProcessing"
+        @click="handleAIFormat"
+      />
     </div>
     <div ref="editorContainer" class="monaco-container__editor"></div>
   </div>

@@ -15,8 +15,10 @@
   "dependencies": {
     "@Sompo-Sigorta-A-S/sompo-ui-kit": "npm:@sompo-sigorta-a-s/sompo-ui-kit@^2.0.8",
     "@vueuse/core": "^13.1.0",
+    "axios": "^1.8.4",
     "chevrotain": "^11.0.3",
     "monaco-editor": "^0.52.2",
+    "openai": "^4.93.0",
     "pinia": "^3.0.1",
     "primeicons": "^7.0.0",
     "vue": "^3.5.13",
