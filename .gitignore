@@ -15,6 +15,8 @@ coverage
 *.local
 .npmrc
 
+.env*
+
 /cypress/videos/
 /cypress/screenshots/
 
