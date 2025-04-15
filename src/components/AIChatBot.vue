@@ -190,9 +190,10 @@ const formatMessageContent = (content) => {
     <div class="ai-chatbot__header">
       <h3 class="ai-chatbot__title">AI Asistan</h3>
       <Button
-        icon="pi pi-refresh"
-        class="p-button-rounded p-button-text"
+        size="small"
+        severity="warn"
         title="Yeni Chat"
+        label="Yeni Chat"
         @click="startNewChat"
       />
     </div>
@@ -233,8 +234,8 @@ const formatMessageContent = (content) => {
     <div class="ai-chatbot__input-container">
       <Textarea
         v-model="messageInput"
-        class="ai-chatbot__input"
-        placeholder="Mesajınızı yazın..."
+        class="w-full"
+        placeholder="Herhangi bir şey sor"
         :disabled="isLoading"
         :autoResize="true"
         rows="1"
@@ -242,7 +243,6 @@ const formatMessageContent = (content) => {
       />
       <Button
         icon="pi pi-send"
-        class="ai-chatbot__send-button"
         :disabled="isLoading || !messageInput.trim()"
         @click="sendMessage"
       />
@@ -254,11 +254,11 @@ const formatMessageContent = (content) => {
 .ai-chatbot {
   display: flex;
   flex-direction: column;
-  background-color: #f8f9fa;
+  background-color: $sompo-light-platinum;
   border-radius: 8px;
-  border: 1px solid #e9ecef;
-  height: 100%;
-  max-height: 500px;
+  border: 1px solid $sompo-medium-platinum;
+  height: $ai-chatbot-height;
+  padding: 1rem;
   overflow-y: auto;
   transition: all 0.3s ease;
 
@@ -266,7 +266,6 @@ const formatMessageContent = (content) => {
     text-align: center;
     color: $sompo-dark-platinum;
     font-size: 14px;
-    padding: 16px;
   }
 
   &--dark {
@@ -307,15 +306,14 @@ const formatMessageContent = (content) => {
   }
 
   &__header {
-    padding: 16px;
-    border-bottom: 1px solid #e9ecef;
+    border-bottom: 1px solid $sompo-medium-platinum;
+    padding-bottom: 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
 
   &__title {
-    margin: 0;
     font-size: 18px;
     font-weight: 600;
   }
@@ -323,16 +321,16 @@ const formatMessageContent = (content) => {
   &__messages {
     flex: 1;
     overflow-y: auto;
-    padding: 16px;
+    padding: 1rem 0.25rem;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 0.5rem;
   }
 
   &__message-container {
     display: flex;
     flex-direction: column;
-    max-width: 80%;
+    max-width: 60%;
 
     &--user {
       align-self: flex-end;
@@ -351,22 +349,22 @@ const formatMessageContent = (content) => {
   }
 
   &__message {
-    padding: 12px 16px;
-    border-radius: 18px;
+    padding: 10px 12px;
+    border-radius: 16px;
     word-break: break-word;
 
     &--user {
       background-color: $sompo-red;
       box-shadow: 0 1px 2px $sompo-dark-platinum;
       color: white;
-      border-bottom-right-radius: 4px;
+      border-bottom-right-radius: 0;
     }
 
     &--assistant {
       box-shadow: 0 1px 2px $sompo-dark-platinum;
-      background-color: $sompo-light-platinum;
-      color: #1a202c;
-      border-bottom-left-radius: 4px;
+      background-color: $sompo-medium-platinum;
+      color: #000;
+      border-bottom-left-radius: 0;
     }
 
     &--error {
@@ -375,7 +373,7 @@ const formatMessageContent = (content) => {
     }
 
     &--typing::after {
-      content: "▌";
+      content: "|";
       display: inline-block;
       animation: blink 1s step-start infinite;
     }
@@ -389,10 +387,10 @@ const formatMessageContent = (content) => {
   }
 
   &__input-container {
-    padding: 16px;
-    border-top: 1px solid #e9ecef;
+    border-top: 1px solid $sompo-medium-platinum;
+    padding-top: 1rem;
     display: flex;
-    gap: 8px;
+    gap: 0.5rem;
   }
 
   &__input {

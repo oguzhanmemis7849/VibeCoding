@@ -10,8 +10,8 @@ body {
   font-size: variables.$font-size-base;
   font-weight: variables.$font-weight-regular;
   color: variables.$text-color;
-  background-color: variables.$layout-background;
-  padding: 0;
+  background-color: variables.$content-background;
+  padding: 1rem;
   margin: 0;
   overflow-x: hidden;
 }

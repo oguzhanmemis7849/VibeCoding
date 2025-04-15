@@ -105,3 +105,7 @@ $md-screen: 768px;
 $lg-screen: 1024px;
 $xl-screen: 1280px;
 $xxl-screen: 1536px;
+
+$code-editor-height: 40vh;
+$function-box-height: 40vh;
+$ai-chatbot-height: calc(100vh - $code-editor-height - $padding-2xl);

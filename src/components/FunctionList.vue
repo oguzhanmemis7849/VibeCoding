@@ -225,10 +225,10 @@ const formatDate = (date) => {
 .function-list {
   display: flex;
   flex-direction: column;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #e9ecef;
-  height: 100%;
+  background-color: $sompo-light-platinum;
+  border: 1px solid $sompo-medium-platinum;
+  border-radius: 0.5rem;
+  height: $function-box-height;
   overflow: hidden;
   transition: all 0.3s ease;
 

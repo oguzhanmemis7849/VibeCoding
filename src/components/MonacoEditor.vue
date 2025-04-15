@@ -219,7 +219,7 @@ onBeforeUnmount(() => {
 
   &__editor {
     width: 100%;
-    height: 300px;
+    height: calc($code-editor-height - 5rem);
     border: 1px solid $sompo-medium-platinum;
     border-radius: $border-radius-xs;
     padding: 0.5px;
