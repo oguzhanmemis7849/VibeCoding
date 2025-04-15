@@ -282,9 +282,8 @@ const formatDate = (date) => {
   }
 
   &__content {
-    flex: 1;
+    max-height: 220px;
     overflow-y: auto;
-    padding: 8px 0;
   }
 
   &__items {

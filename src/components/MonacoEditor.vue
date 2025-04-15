@@ -179,7 +179,6 @@ onBeforeUnmount(() => {
         label="Kaydet"
         @click="handleSave"
       />
-      <!-- <Button severity="info" icon="pi pi-upload" label="Yükle" /> -->
       <Button
         icon="pi pi-slack"
         label="AI ile Düzenle"
@@ -220,7 +219,7 @@ onBeforeUnmount(() => {
 
   &__editor {
     width: 100%;
-    height: 400px;
+    height: 300px;
     border: 1px solid $sompo-medium-platinum;
     border-radius: $border-radius-xs;
     padding: 0.5px;

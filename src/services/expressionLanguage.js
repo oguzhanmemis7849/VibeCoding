@@ -331,8 +331,6 @@ export function configureLanguage(editor) {
       if (line.toLowerCase().includes("eğer")) {
         try {
           const parseResult = parse(line);
-          console.log(parseResult);
-
           if (!parseResult.success) {
             const errorDetails = parseResult.errors[0];
             let errorMessage = "Geçersiz ifade yapısı. ";

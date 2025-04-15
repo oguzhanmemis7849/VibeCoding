@@ -119,6 +119,86 @@ class OpenAIService {
   }
 
   /**
+   * Stream modunda OpenAI yanıtı alır
+   * @param {Array<Object>} messages - Mesaj geçmişi
+   * @param {Function} onMessage - Yeni mesaj geldiğinde çağrılacak callback (chunk, fullText, isDone)
+   * @param {Object} options - İstek seçenekleri
+   * @returns {Promise<void>} - Stream tamamlandığında resolve olan Promise
+   */
+  async streamChatCompletion(messages, onMessage, options = {}) {
+    if (!this.client) {
+      this.initialize();
+      if (!this.client) {
+        throw new Error(
+          "OpenAI istemcisi başlatılamadı. API anahtarını kontrol edin."
+        );
+      }
+    }
+
+    // Önceki isteği iptal et
+    this.cancelRequest();
+
+    // Yeni abort controller oluştur
+    this.abortController = new AbortController();
+
+    const defaultOptions = {
+      model: "gpt-4o",
+      temperature: 0.1,
+      max_tokens: 2000,
+    };
+
+    const requestOptions = { ...defaultOptions, ...options };
+
+    try {
+      const stream = await this.client.chat.completions.create({
+        model: requestOptions.model,
+        temperature: requestOptions.temperature,
+        max_tokens: requestOptions.max_tokens,
+        messages: messages,
+        stream: true,
+      });
+
+      let fullResponse = "";
+
+      for await (const chunk of stream) {
+        // AbortController kontrolü
+        if (this.abortController === null) break;
+
+        const content = chunk.choices[0]?.delta?.content || "";
+        if (content) {
+          fullResponse += content;
+          onMessage(content, fullResponse, false);
+        }
+      }
+
+      // Stream tamamlandı
+      onMessage("", fullResponse, true);
+      this.abortController = null;
+
+      return fullResponse;
+    } catch (error) {
+      this.abortController = null;
+
+      // Kullanıcı isteği iptal ettiyse özel hata dön
+      if (error.name === "AbortError") {
+        throw new Error("İstek iptal edildi.");
+      }
+
+      // API hatası
+      if (error.response) {
+        throw new Error(
+          `OpenAI API Hatası: ${error.response.status} - ${
+            error.response.data?.error?.message || "Bilinmeyen hata"
+          }`
+        );
+      }
+
+      // Diğer hatalar
+      throw new Error(`OpenAI stream isteği başarısız oldu: ${error.message}`);
+    }
+  }
+
+  /**
    * Metin formatlamak için OpenAI'ya istek gönderir
    * @param {string} text - Formatlanacak metin
    * @param {Object} options - İstek seçenekleri
@@ -128,6 +208,7 @@ class OpenAIService {
     const formatPrompt = await fetch(formatter).then((res) => res.text());
     const defaultFormatOptions = {
       model: "gpt-4o",
+      temperature: 0.1,
     };
 
     const mergedOptions = { ...defaultFormatOptions, ...options };
