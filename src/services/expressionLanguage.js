@@ -1,7 +1,8 @@
 import * as monaco from "monaco-editor";
 import { parse } from "@/services/expressionParser";
 import { variables } from "@/helpers/monacoVariableList";
-
+import { useFunctionStore } from "@/stores";
+import { formatDate } from "@/helpers/utils";
 let openAIService = null;
 
 /**
@@ -23,6 +24,9 @@ export function configureLanguage(editor) {
     .map((v) => v.replace(/\s/g, "\\s"))
     .join("|");
 
+  // Function store'a erişim
+  const functionStore = useFunctionStore();
+
   // 2. Dili ve temayı kaydet
   monaco.languages.register({ id: "expressionLanguage" });
 
@@ -39,13 +43,15 @@ export function configureLanguage(editor) {
         [/\(/, "delimiter.parenthesis"],
         [/\)/, "delimiter.parenthesis"],
         [/\s+/, "white"],
+        // @ ile başlayan fonksiyonlar için özel token (Türkçe karakter desteği)
+        [/@[a-zA-ZçÇğĞıİöÖşŞüÜ0-9_]+/, "functionName"],
       ],
     },
   });
 
   // 4. Gelişmiş IntelliSense (Completion) sağlayıcısını ekle
   monaco.languages.registerCompletionItemProvider("expressionLanguage", {
-    triggerCharacters: ["(", ")", " ", ".", "'", '"', "=", ">", "<"],
+    triggerCharacters: ["@", "(", ")", " ", ".", "'", '"', "=", ">", "<"],
 
     async provideCompletionItems(model, position) {
       // Mevcut kelime bilgisini ve pozisyonunu elde et
@@ -55,64 +61,124 @@ export function configureLanguage(editor) {
 
       const suggestions = [];
 
-      // Değişken önerileri
-      suggestions.push(
-        ...variableList.map((variable) => ({
-          label: variable,
-          kind: monaco.languages.CompletionItemKind.Variable,
-          insertText: variable,
-          detail: "Değişken",
-          documentation: { value: `**${variable}** değişkeni` },
-          sortText: "1",
-          filterText: variable.toLowerCase(),
-          range: {
-            startLineNumber: position.lineNumber,
-            startColumn: wordInfo.startColumn,
-            endLineNumber: position.lineNumber,
-            endColumn: wordInfo.endColumn,
-          },
-        }))
-      );
+      // @ işareti yazıldığında veya @ sonrası yazarken fonksiyon önerileri göster
+      if (textUntilPosition.endsWith("@")) {
+        // Kayıtlı tüm fonksiyonları önerilere ekle
+        functionStore.functions.forEach((func) => {
+          suggestions.push({
+            label: func.name,
+            kind: monaco.languages.CompletionItemKind.Function,
+            insertText: func.name,
+            detail: "Fonksiyon",
+            documentation: {
+              value: `**@${func.name}**\n\n\`\`\`js\n${func.code}\n\`\`\``,
+            },
+            sortText: "0", // En üstte gösterilmesi için
+            filterText: func.name.toLowerCase(),
+            range: {
+              startLineNumber: position.lineNumber,
+              startColumn: wordInfo.startColumn,
+              endLineNumber: position.lineNumber,
+              endColumn: wordInfo.endColumn,
+            },
+          });
+        });
+      } else {
+        // @ işaretinden sonra yazarken de fonksiyon adlarını öner
+        const match = textUntilPosition.match(/@([a-zA-ZçÇğĞıİöÖşŞüÜ0-9_]*)$/);
+        if (match) {
+          const prefix = match[1].toLowerCase();
 
-      // Keyword önerileri
-      const keywords = ["eğer", "ise", "veya", "ve", "değilse"];
-      suggestions.push(
-        ...keywords.map((keyword) => ({
-          label: keyword,
-          kind: monaco.languages.CompletionItemKind.Keyword,
-          insertText: keyword,
-          detail: "Anahtar Kelime",
-          documentation: { value: `**${keyword}** anahtar kelimesi` },
-          sortText: "2",
-          filterText: keyword.toLowerCase(),
-          range: {
-            startLineNumber: position.lineNumber,
-            startColumn: wordInfo.startColumn,
-            endLineNumber: position.lineNumber,
-            endColumn: wordInfo.endColumn,
-          },
-        }))
-      );
+          // Eşleşen fonksiyonları öneriler listesine ekle
+          functionStore.functions.forEach((func) => {
+            if (func.name.toLowerCase().startsWith(prefix)) {
+              suggestions.push({
+                label: func.name,
+                kind: monaco.languages.CompletionItemKind.Function,
+                insertText: func.name,
+                detail: "Fonksiyon",
+                documentation: {
+                  value: `**@${func.name}**\n\n\`\`\`js\n${func.code}\n\`\`\``,
+                },
+                sortText: "0", // En üstte gösterilmesi için
+                filterText: func.name.toLowerCase(),
+                range: {
+                  startLineNumber: position.lineNumber,
+                  startColumn: position.column - prefix.length,
+                  endLineNumber: position.lineNumber,
+                  endColumn: position.column,
+                },
+              });
+            }
+          });
 
-      // Operatör önerileri
-      const operators = ["==", "!=", ">", "<", ">=", "<="];
-      suggestions.push(
-        ...operators.map((op) => ({
-          label: op,
-          kind: monaco.languages.CompletionItemKind.Operator,
-          insertText: op,
-          detail: "Operatör",
-          documentation: { value: `**${op}** operatörü` },
-          sortText: "3",
-          filterText: op,
-          range: {
-            startLineNumber: position.lineNumber,
-            startColumn: wordInfo.startColumn,
-            endLineNumber: position.lineNumber,
-            endColumn: wordInfo.endColumn,
-          },
-        }))
-      );
+          if (suggestions.length > 0) {
+            return {
+              suggestions,
+              incomplete: false,
+            };
+          }
+        } else {
+          // Değişken önerileri
+          suggestions.push(
+            ...variableList.map((variable) => ({
+              label: variable,
+              kind: monaco.languages.CompletionItemKind.Variable,
+              insertText: variable,
+              detail: "Değişken",
+              documentation: { value: `**${variable}** değişkeni` },
+              sortText: "1",
+              filterText: variable.toLowerCase(),
+              range: {
+                startLineNumber: position.lineNumber,
+                startColumn: wordInfo.startColumn,
+                endLineNumber: position.lineNumber,
+                endColumn: wordInfo.endColumn,
+              },
+            }))
+          );
+
+          // Keyword önerileri
+          const keywords = ["eğer", "ise", "veya", "ve", "değilse"];
+          suggestions.push(
+            ...keywords.map((keyword) => ({
+              label: keyword,
+              kind: monaco.languages.CompletionItemKind.Keyword,
+              insertText: keyword,
+              detail: "Anahtar Kelime",
+              documentation: { value: `**${keyword}** anahtar kelimesi` },
+              sortText: "2",
+              filterText: keyword.toLowerCase(),
+              range: {
+                startLineNumber: position.lineNumber,
+                startColumn: wordInfo.startColumn,
+                endLineNumber: position.lineNumber,
+                endColumn: wordInfo.endColumn,
+              },
+            }))
+          );
+
+          // Operatör önerileri
+          const operators = ["==", "!=", ">", "<", ">=", "<="];
+          suggestions.push(
+            ...operators.map((op) => ({
+              label: op,
+              kind: monaco.languages.CompletionItemKind.Operator,
+              insertText: op,
+              detail: "Operatör",
+              documentation: { value: `**${op}** operatörü` },
+              sortText: "3",
+              filterText: op,
+              range: {
+                startLineNumber: position.lineNumber,
+                startColumn: wordInfo.startColumn,
+                endLineNumber: position.lineNumber,
+                endColumn: wordInfo.endColumn,
+              },
+            }))
+          );
+        }
+      }
 
       // Bağlam tabanlı kod parçacıkları (snippets)
       if (textUntilPosition.trim() === "" || textUntilPosition.endsWith(" ")) {
@@ -208,22 +274,49 @@ export function configureLanguage(editor) {
   // 5. Hover sağlayıcı ekle
   monaco.languages.registerHoverProvider("expressionLanguage", {
     async provideHover(model, position) {
-      if (!openAIService) return;
       const word = model.getWordAtPosition(position);
-      if (!word) return;
+      if (!word) return null;
 
-      try {
-        const explanation = await openAIService.generateCompletion(
-          "Bu terimi koşullu ifadeler bağlamında açıkla",
-          word.word
-        );
-        return {
-          contents: [{ value: `**${word.word}**` }, { value: explanation }],
-        };
-      } catch (error) {
-        console.warn("OpenAI hover hatası:", error);
-        return null;
+      // Fonksiyon isimlerini kontrol et (@functionName şeklinde)
+
+      if (word) {
+        const functionName = word.word;
+        const func = functionStore.findByName(functionName);
+
+        if (func) {
+          return {
+            contents: [
+              { value: `###### @${func.name}` },
+              { value: `Oluşturulma: ${formatDate(func.createdAt)}` },
+              { value: func.code },
+            ],
+            range: {
+              startLineNumber: position.lineNumber,
+              startColumn: position.column - functionName.length - 1, // @ işaretini hesaba kat
+              endLineNumber: position.lineNumber,
+              endColumn: position.column,
+            },
+          };
+        }
       }
+
+      // Diğer kelimeler için mevcut hover işlemini kullan
+      if (openAIService) {
+        try {
+          const explanation = await openAIService.generateCompletion(
+            "Bu terimi koşullu ifadeler bağlamında açıkla",
+            word.word
+          );
+          return {
+            contents: [{ value: `**${word.word}**` }, { value: explanation }],
+          };
+        } catch (error) {
+          console.warn("OpenAI hover hatası:", error);
+          return null;
+        }
+      }
+
+      return null;
     },
   });
 

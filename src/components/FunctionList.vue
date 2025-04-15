@@ -1,214 +1,415 @@
 <script setup>
 import { ref, computed } from "vue";
 import { useFunctionStore } from "@/stores";
+import { useTheme } from "@/composables/useTheme";
+import CodePreview from "@/components/CodePreview.vue";
 
-// Store'a erişim
+const props = defineProps({
+  onFunctionSelect: {
+    type: Function,
+    default: () => {},
+  },
+});
+
+// Function store
 const functionStore = useFunctionStore();
 
-// Kaydedilen fonksiyonları al
-const functions = computed(() => functionStore.functions);
-
-// Seçilen fonksiyon ve önizleme dialogu
+// UI State
+const searchTerm = ref("");
 const selectedFunction = ref(null);
-const showPreviewDialog = ref(false);
 
-// Fonksiyon seçildiğinde önizleme dialog'unu aç
-const showFunctionPreview = (func) => {
+// Dialog durumları
+const showPreviewDialog = ref(false);
+const showDeleteDialog = ref(false);
+const functionToDelete = ref(null);
+
+// Tema bilgisi
+const { isDark } = useTheme();
+
+// Filtreleme işlevi
+const filteredFunctions = computed(() => {
+  if (!searchTerm.value) {
+    return functionStore.functions;
+  }
+
+  const term = searchTerm.value.toLowerCase();
+  return functionStore.functions.filter((func) =>
+    func.name.toLowerCase().includes(term)
+  );
+});
+
+// Fonksiyon seçme işlemi
+const selectFunction = (func) => {
+  selectedFunction.value = func;
+  props.onFunctionSelect(func);
+};
+
+// Fonksiyon ekleme işlemi - Code Editor içine fonksiyonu ekler
+const insertFunction = (func) => {
+  // Fonksiyon verisini editöre eklemek için eventi emit ediyoruz
+  props.onFunctionSelect(func);
+};
+
+// Fonksiyon önizleme
+const previewFunction = (func, event) => {
+  event.stopPropagation(); // Seçim işlemi tetiklenmesin
   selectedFunction.value = func;
   showPreviewDialog.value = true;
 };
 
-// Dialog'u kapat
+// Fonksiyon silme dialogu
+const confirmDeleteFunction = (func, event) => {
+  event.stopPropagation(); // Seçim işlemi tetiklenmesin
+  functionToDelete.value = func;
+  showDeleteDialog.value = true;
+};
+
+// Fonksiyon silme işlemi
+const deleteFunction = () => {
+  if (functionToDelete.value) {
+    functionStore.removeFunction(functionToDelete.value);
+    showDeleteDialog.value = false;
+    functionToDelete.value = null;
+
+    // Eğer silinen fonksiyon seçili ise, seçimi kaldır
+    if (selectedFunction.value === functionToDelete.value) {
+      selectedFunction.value = null;
+    }
+  }
+};
+
+// Önizleme dialogunu kapat
 const closePreviewDialog = () => {
   showPreviewDialog.value = false;
-  // Dialog tamamen kapandıktan sonra seçili fonksiyonu temizle
-  setTimeout(() => {
-    selectedFunction.value = null;
-  }, 300);
+};
+
+// Fonksiyon yok ise gösterilecek içerik
+const noFunctionsMessage = computed(() => {
+  if (functionStore.functions.length === 0) {
+    return "Henüz kaydedilmiş fonksiyon bulunmuyor.";
+  }
+
+  if (filteredFunctions.value.length === 0) {
+    return "Arama kriterine uygun fonksiyon bulunamadı.";
+  }
+
+  return null;
+});
+
+// Fonksiyon oluşturulma tarihini formatla
+const formatDate = (date) => {
+  if (!date) return "-";
+  return new Date(date).toLocaleString("tr-TR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 </script>
 
 <template>
-  <div class="function-list">
-    <h2 class="function-list__title">Kaydedilen Fonksiyonlar</h2>
-
-    <div v-if="functions.length === 0" class="function-list__empty">
-      Henüz kaydedilmiş fonksiyon bulunmuyor.
+  <div class="function-list" :class="{ 'function-list--dark': isDark }">
+    <div class="function-list__header">
+      <h3 class="function-list__title">Fonksiyonlar</h3>
+      <InputText
+        v-model="searchTerm"
+        type="text"
+        placeholder="Fonksiyon ara..."
+      />
     </div>
 
-    <div v-else class="function-list__items">
-      <div
-        v-for="func in functions"
-        :key="func.id"
-        class="function-list__item"
-        @click="showFunctionPreview(func)"
-      >
-        <div class="function-list__item-name">{{ func.name }}</div>
+    <div class="function-list__content">
+      <div v-if="noFunctionsMessage" class="function-list__empty">
+        {{ noFunctionsMessage }}
       </div>
-    </div>
 
-    <!-- Fonksiyon Önizleme Dialog'u -->
-    <Dialog
-      :visible="showPreviewDialog"
-      modal
-      header="Fonksiyon Önizleme"
-      :style="{ width: '50rem' }"
-      @update:visible="closePreviewDialog"
-    >
-      <div v-if="selectedFunction" class="function-list__preview">
-        <div class="function-list__preview-header">
-          <h3>{{ selectedFunction.name }}</h3>
-          <div class="function-list__preview-date">
-            Oluşturulma:
-            {{ new Date(selectedFunction.createdAt).toLocaleString() }}
+      <ul v-else class="function-list__items">
+        <li
+          v-for="func in filteredFunctions"
+          :key="func.name"
+          class="function-list__item"
+          :class="{
+            'function-list__item--selected': selectedFunction === func,
+          }"
+          @click="selectFunction(func)"
+        >
+          <div class="function-list__item-name">
+            <span class="function-list__item-symbol">@</span>
+            {{ func.name }}
           </div>
-        </div>
+          <div class="function-list__item-actions">
+            <button
+              class="function-list__item-button"
+              title="Önizle"
+              @click.stop="previewFunction(func, $event)"
+            >
+              <i class="pi pi-eye"></i>
+            </button>
+            <button
+              class="function-list__item-button"
+              title="Sil"
+              @click.stop="confirmDeleteFunction(func, $event)"
+            >
+              <i class="pi pi-trash"></i>
+            </button>
+            <button
+              class="function-list__item-button"
+              title="Ekle"
+              @click.stop="insertFunction(func)"
+            >
+              <i class="pi pi-plus"></i>
+            </button>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
 
-        <div class="function-list__preview-content">
-          <pre>{{ selectedFunction.code }}</pre>
+  <!-- Fonksiyon Önizleme Dialog -->
+  <Dialog
+    v-model:visible="showPreviewDialog"
+    modal
+    :header="selectedFunction?.name"
+    :style="{ width: '40rem' }"
+    :dismissable-mask="true"
+  >
+    <template #header> </template>
+    <div v-if="selectedFunction" class="function-preview">
+      <div class="function-preview__header">
+        <div class="function-preview__meta">
+          <span class="function-preview__meta-item">
+            <i class="pi pi-calendar"></i>
+            {{ formatDate(selectedFunction.createdAt) }}
+          </span>
         </div>
       </div>
+      <div v-if="selectedFunction?.code" class="function-preview__content">
+        <CodePreview :code="selectedFunction.code" />
+      </div>
+    </div>
+    <template #footer>
+      <Button
+        label="Ekle"
+        severity="success"
+        @click="
+          insertFunction(selectedFunction);
+          closePreviewDialog();
+        "
+      />
+    </template>
+  </Dialog>
 
-      <template #footer>
-        <div class="function-list__preview-footer">
-          <Button
-            label="Kapat"
-            icon="pi pi-times"
-            class="p-button-text"
-            @click="closePreviewDialog"
-          />
-          <Button
-            label="Editörde Aç"
-            icon="pi pi-pencil"
-            severity="primary"
-            @click="
-              $emit('select-function', selectedFunction);
-              closePreviewDialog();
-            "
-          />
-        </div>
-      </template>
-    </Dialog>
-  </div>
+  <!-- Silme Onay Dialog -->
+  <Dialog
+    v-model:visible="showDeleteDialog"
+    modal
+    header="Fonksiyonu Sil"
+    :style="{ width: '30rem' }"
+    :dismissable-mask="true"
+  >
+    <div class="delete-confirm">
+      <p class="delete-confirm__message">
+        <strong>{{ functionToDelete?.name }}</strong> fonksiyonunu silmek
+        istediğinize emin misiniz? Bu işlem geri alınamaz.
+      </p>
+    </div>
+    <template #footer>
+      <Button label="Sil" severity="danger" @click="deleteFunction" />
+    </template>
+  </Dialog>
 </template>
 
-<style lang="scss" scoped>
+<style scoped lang="scss">
 .function-list {
   display: flex;
   flex-direction: column;
-  width: 100%;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
   height: 100%;
+  overflow: hidden;
+  transition: all 0.3s ease;
+
+  &--dark {
+    background-color: #2d3748;
+    border-color: #4a5568;
+    color: #e2e8f0;
+
+    .function-list__item {
+      border-color: #4a5568;
+
+      &:hover {
+        background-color: #3a4860;
+      }
+
+      &--selected {
+        background-color: #3a4860;
+      }
+    }
+
+    .function-list__item-symbol {
+      color: #fc8eac; // Pembe renk (dark mode)
+    }
+
+    .function-list__item-button {
+      color: #e2e8f0;
+
+      &:hover {
+        background-color: #4a5568;
+      }
+    }
+
+    .function-list__empty {
+      color: #a0aec0;
+    }
+  }
+
+  &__header {
+    padding: 16px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
 
   &__title {
-    font-size: 1.2rem;
+    margin: 0;
+    font-size: 18px;
     font-weight: 600;
-    margin-bottom: 1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid $sompo-light-platinum;
+    color: inherit;
+  }
+
+  &__content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+  }
+
+  &__items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  &__item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid #e9ecef;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:hover {
+      background-color: #f1f3f5;
+    }
+
+    &--selected {
+      background-color: #e9f2fe;
+    }
+
+    &-name {
+      font-size: 14px;
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &-symbol {
+      color: #ec4899; // Pembe renk (light mode)
+      font-weight: bold;
+      margin-right: 4px;
+    }
+
+    &-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    &-button {
+      background: transparent;
+      border: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #6b7280;
+      padding: 0;
+      transition: all 0.2s;
+
+      &:hover {
+        background-color: #e9ecef;
+      }
+    }
   }
 
   &__empty {
     display: flex;
-    justify-content: center;
     align-items: center;
-    padding: 2rem;
-    font-style: italic;
-    color: $sompo-medium-platinum;
+    justify-content: center;
+    height: 100%;
+    padding: 24px 16px;
     text-align: center;
-    border: 1px dashed $sompo-light-platinum;
-    border-radius: $border-radius-md;
+    color: #6b7280;
+    font-size: 14px;
   }
+}
 
-  &__items {
+.function-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  &__header {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-    overflow-y: auto;
-    max-height: 400px;
+    gap: 8px;
   }
 
-  &__item {
-    padding: 0.75rem 1rem;
-    background-color: white;
-    border: 1px solid $sompo-light-platinum;
-    border-radius: $border-radius-sm;
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &:hover {
-      border-color: $sompo-bronze;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-      transform: translateY(-1px);
-    }
-
-    &-name {
-      font-weight: 500;
-    }
+  &__name {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
   }
 
-  &__preview {
+  &__meta {
     display: flex;
-    flex-direction: column;
-    gap: 1rem;
+    gap: 16px;
+    font-size: 13px;
+    color: #6b7280;
 
-    &-header {
+    &-item {
       display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
+      align-items: center;
+      gap: 4px;
 
-      h3 {
-        margin: 0;
-        font-size: 1.1rem;
+      i {
+        font-size: 14px;
       }
-    }
-
-    &-date {
-      font-size: 0.8rem;
-      color: $sompo-medium-platinum;
-    }
-
-    &-content {
-      max-height: 300px;
-      overflow-y: auto;
-      background-color: #f5f5f5;
-      padding: 1rem;
-      border-radius: $border-radius-sm;
-      font-family: monospace;
-
-      pre {
-        margin: 0;
-        white-space: pre-wrap;
-        word-break: break-word;
-      }
-    }
-
-    &-footer {
-      display: flex;
-      justify-content: flex-end;
-      gap: 0.5rem;
     }
   }
 }
 
-.theme-dark {
-  .function-list {
-    &__empty {
-      border-color: $sompo-dark-platinum;
-      color: $sompo-dark-platinum;
-    }
+.delete-confirm {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 10px 0;
 
-    &__item {
-      background-color: $sompo-black;
-      border-color: $sompo-dark-platinum;
+  &__icon {
+    font-size: 32px;
+    color: #e74c3c;
+  }
 
-      &:hover {
-        border-color: $sompo-bronze;
-      }
-    }
-
-    &__preview-content {
-      background-color: $sompo-black;
-    }
+  &__message {
+    margin: 0;
+    line-height: 1.5;
   }
 }
 </style>

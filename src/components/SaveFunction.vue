@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from "vue";
 import { useFunctionStore } from "@/stores";
+import CodePreview from "@/components/CodePreview.vue";
 
 const props = defineProps({
   showDialog: {
@@ -40,7 +41,11 @@ const validateAndSave = () => {
   console.log(`"${codeName.value}" isimli kod kaydediliyor:`, props.code);
 
   // Kaydetme olayını üst bileşene gönder
-  emit("save", { name: codeName.value, code: props.code });
+  emit("save", {
+    name: codeName.value,
+    code: props.code,
+    createdAt: new Date(),
+  });
 
   // Dialog'u kapat
   emit("update:showDialog", false);
@@ -80,11 +85,8 @@ const handleCancel = () => {
         }}</small>
       </div>
 
-      <div v-if="code" class="save-dialog-content__code-preview">
-        <label for="codePreview">Önizleme:</label>
-        <div class="save-dialog-content__code-preview__code">
-          {{ code.length > 200 ? code.substring(0, 200) + "..." : code }}
-        </div>
+      <div v-if="code">
+        <CodePreview :code="code" />
       </div>
     </div>
 
@@ -113,40 +115,11 @@ const handleCancel = () => {
     flex-direction: column;
     gap: 0.5rem;
   }
-
-  &__code-preview {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-
-    &__code {
-      background-color: #f5f5f5;
-      border: 1px solid #e0e0e0;
-      border-radius: 4px;
-      padding: 0.5rem;
-      font-family: monospace;
-      max-height: 150px;
-      overflow: auto;
-      white-space: pre-wrap;
-      word-break: break-all;
-    }
-  }
 }
 
 .dialog-footer {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
-}
-
-.theme-dark {
-  .save-dialog-content {
-    &__code-preview {
-      &__code {
-        background-color: $sompo-black;
-        border-color: $sompo-dark-platinum;
-      }
-    }
-  }
 }
 </style>

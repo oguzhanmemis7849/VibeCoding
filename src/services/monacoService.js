@@ -1,6 +1,7 @@
 import * as monaco from "monaco-editor";
 import { useTheme } from "@/composables/useTheme";
 import { configureLanguage } from "./expressionLanguage.js";
+import { watch } from "vue";
 
 const { isDark } = useTheme();
 
@@ -16,10 +17,39 @@ export function createMonacoEditor(
   value = "",
   language = "expressionLanguage"
 ) {
+  // Tema tanımlamalarını önceden yapılandır
+  // Light tema tanımı
+  monaco.editor.defineTheme("expressionLanguage-light", {
+    base: "vs",
+    inherit: true,
+    rules: [
+      { token: "functionName", foreground: "ec4899", fontStyle: "bold" }, // Pembe renk (light mode)
+    ],
+    colors: {},
+  });
+
+  // Dark tema tanımı
+  monaco.editor.defineTheme("expressionLanguage-dark", {
+    base: "vs-dark",
+    inherit: true,
+    rules: [
+      { token: "functionName", foreground: "fc8eac", fontStyle: "bold" }, // Pembe renk (dark mode)
+    ],
+    colors: {},
+  });
+
+  // İlk yüklemede tema ayarı
+  const editorTheme = isDark.value
+    ? "expressionLanguage-dark"
+    : "expressionLanguage-light";
+
+  // Tema ayarını hemen uygula
+  monaco.editor.setTheme(editorTheme);
+
   const editorInstance = monaco.editor.create(editor, {
     value,
     language,
-    theme: isDark.value ? "vs-dark" : "vs-light",
+    theme: editorTheme,
     automaticLayout: true, // editor boyutu değiştiğinde otomatik yeniden düzenleme
     minimap: { enabled: false }, // Minimap'ı etkinleştirme
     wordWrap: "on", // Kelime sarma
@@ -60,7 +90,16 @@ export function createMonacoEditor(
     },
   });
 
+  // Dil konfigürasyonunu ayarla
   configureLanguage(editorInstance);
+
+  // Tema değişikliğini dinle ve editör temasını güncelle
+  watch(isDark, (newValue) => {
+    const newTheme = newValue
+      ? "expressionLanguage-dark"
+      : "expressionLanguage-light";
+    monaco.editor.setTheme(newTheme);
+  });
 
   return editorInstance;
 }
