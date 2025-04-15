@@ -2,6 +2,8 @@
 import { onMounted, onBeforeUnmount, ref, watch } from "vue";
 import { createMonacoEditor } from "@/services";
 import openAIService from "@/services/openaiService";
+import SaveFunction from "./SaveFunction.vue";
+import { useFunctionStore } from "@/stores";
 
 const props = defineProps({
   modelValue: {
@@ -16,6 +18,9 @@ const props = defineProps({
 
 const emit = defineEmits(["update:modelValue"]);
 
+// Function store'a erişim
+const functionStore = useFunctionStore();
+
 const editorContainer = ref(null);
 let editorInstance = null;
 
@@ -25,6 +30,9 @@ const canRedo = ref(false);
 
 // AI işleme durumu
 const isAIProcessing = ref(false);
+
+// Kaydetme dialog durumu
+const showSaveDialog = ref(false);
 
 // Buton durumlarını güncelleme fonksiyonu
 const updateButtonStates = () => {
@@ -50,6 +58,16 @@ const handleRedo = () => {
   }
 };
 
+// Kaydet butonuna tıklandığında dialog'u aç
+const handleSave = () => {
+  showSaveDialog.value = true;
+};
+
+// Kod kaydedildiğinde
+const handleSaveFunction = (data) => {
+  functionStore.addFunction(data);
+};
+
 // AI ile düzenle fonksiyonu
 const handleAIFormat = async () => {
   if (editorInstance && !isAIProcessing.value) {
@@ -65,11 +83,28 @@ const handleAIFormat = async () => {
       // OpenAI servisi ile metni formatla
       const formattedText = await openAIService.formatText(currentText);
 
-      // Formatlanan metni editöre ekle
       if (formattedText) {
-        editorInstance.setValue(formattedText);
+        // Düzenleme geçmişini korumak için doğrudan editör değerini değiştirme.
+        // Bunun yerine, bir düzenleme işlemi uygulayarak değiştir.
+        const model = editorInstance.getModel();
+
+        // Mevcut metin aralığını belirle (tüm belge)
+        const fullRange = model.getFullModelRange();
+
+        // Tek bir düzenleme işlemi içinde tüm metni değiştir (geri al için bir adım olarak kaydedilir)
+        editorInstance.executeEdits("ai-format", [
+          {
+            range: fullRange,
+            text: formattedText,
+            forceMoveMarkers: true,
+          },
+        ]);
+
         // Değişikliği parent bileşene ilet
         emit("update:modelValue", formattedText);
+
+        // Buton durumlarını güncelle
+        updateButtonStates();
       }
     } catch (error) {
       console.error("AI formatlama hatası:", error);
@@ -80,6 +115,7 @@ const handleAIFormat = async () => {
   }
 };
 
+// Component mount olduğunda function store'dan kaydedilmiş fonksiyonları yükle
 onMounted(() => {
   // Editor oluşturuluyor
   editorInstance = createMonacoEditor(
@@ -137,8 +173,13 @@ onBeforeUnmount(() => {
           @click="handleRedo"
         />
       </div>
-      <Button severity="success" icon="pi pi-save" label="Kaydet" />
-      <Button severity="info" icon="pi pi-upload" label="Yükle" />
+      <Button
+        severity="success"
+        icon="pi pi-save"
+        label="Kaydet"
+        @click="handleSave"
+      />
+      <!-- <Button severity="info" icon="pi pi-upload" label="Yükle" /> -->
       <Button
         icon="pi pi-slack"
         label="AI ile Düzenle"
@@ -148,6 +189,13 @@ onBeforeUnmount(() => {
       />
     </div>
     <div ref="editorContainer" class="monaco-container__editor"></div>
+
+    <!-- Kaydetme Dialog Bileşeni -->
+    <SaveFunction
+      v-model:showDialog="showSaveDialog"
+      :code="editorInstance ? editorInstance.getValue() : ''"
+      @save="handleSaveFunction"
+    />
   </div>
 </template>
 
