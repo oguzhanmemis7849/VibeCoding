@@ -144,6 +144,7 @@ const startNewChat = () => {
   isLoading.value = false;
   messageInput.value = "";
   isTyping.value = false;
+  editorStore.clearPendingCode();
 };
 
 // Mesajı gönder (enter tuşu)
