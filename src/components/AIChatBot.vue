@@ -4,11 +4,13 @@ import openAIService from "@/services/openaiService";
 import { useTheme } from "@/composables/useTheme";
 import chatbot from "@/prompts/chatbot.txt";
 import { useFunctionStore } from "@/stores/function";
+import { useEditorStore } from "@/stores/editor";
 import { variables } from "@/helpers/monacoVariableList";
 // Tema bilgisini al
 const { isDark } = useTheme();
 
 const functionStore = useFunctionStore();
+const editorStore = useEditorStore();
 
 // Chat durumu ve mesajlar
 const messages = ref([]);
@@ -152,31 +154,22 @@ const handleKeydown = (event) => {
   }
 };
 
-// Komponenti monte et
-onMounted(() => {
-  // Hoşgeldin mesajı ekle
-  messages.value.push({
-    id: Date.now(),
-    role: "assistant",
-    content: "Merhaba! Size nasıl yardımcı olabilirim?",
-    timestamp: new Date(),
-  });
-});
-
-// Tarih formatla
-const formatTime = (date) => {
-  if (!date) return "";
-  return new Date(date).toLocaleTimeString("tr-TR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
 // Mesaj içeriğini markdown/kod olarak formatla
 const formatMessageContent = (content) => {
+  // Benzersiz ID ile her kod bloğunu işaretle
+  let codeBlockId = 0;
+
   // Kod bloklarını işle
   content = content.replace(/```([\s\S]*?)```/g, (match, code) => {
-    return `<pre class="code-block"><code>${code}</code></pre>`;
+    codeBlockId++; // Her kod bloğu için benzersiz ID
+    // Kodun başındaki ve sonundaki boşlukları temizle
+    const trimmedCode = code.trim();
+    return `<div>
+              <pre class="code-block"><code>${trimmedCode}</code></pre>
+              <button class="code-apply-button" data-code-id="${codeBlockId}" data-code="${encodeURIComponent(
+      trimmedCode
+    )}">Editöre Uygula</button>
+            </div>`;
   });
 
   // Satır içi kod
@@ -196,6 +189,79 @@ const formatMessageContent = (content) => {
 
   return content;
 };
+
+// Kod bloğunu editöre uygula
+const applyCodeToEditor = async (codeText) => {
+  try {
+    isLoading.value = true;
+
+    // Kodu formatla
+    const formattedCode = await openAIService.formatText(codeText);
+
+    // Store'a gönder
+    editorStore.setCodeFromAI(formattedCode || codeText);
+
+    // Başarı mesajı göster
+    messages.value.push({
+      id: Date.now(),
+      role: "system",
+      content:
+        "Kod editöre uygulandı! Editör sekmesine geçerek kodu görebilirsiniz.",
+      timestamp: new Date(),
+    });
+
+    await scrollToBottom();
+  } catch (error) {
+    console.error("Kod uygulama hatası:", error);
+
+    // Hata mesajı ekle
+    messages.value.push({
+      id: Date.now(),
+      role: "system",
+      content:
+        "Kod editöre uygulanırken bir hata oluştu. Lütfen tekrar deneyin.",
+      timestamp: new Date(),
+      isError: true,
+    });
+
+    await scrollToBottom();
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// Buton tıklamalarını dinle - olay delegasyonu kullanılıyor
+const handleMessageClick = (event) => {
+  const target = event.target;
+  if (target.classList.contains("code-apply-button")) {
+    const codeData = target.getAttribute("data-code");
+    if (codeData) {
+      // URL kodunu çöz
+      const codeText = decodeURIComponent(codeData);
+      applyCodeToEditor(codeText);
+    }
+  }
+};
+
+// Komponenti monte et
+onMounted(() => {
+  // Hoşgeldin mesajı ekle
+  messages.value.push({
+    id: Date.now(),
+    role: "assistant",
+    content: "Merhaba! Size nasıl yardımcı olabilirim?",
+    timestamp: new Date(),
+  });
+});
+
+// Tarih formatla
+const formatTime = (date) => {
+  if (!date) return "";
+  return new Date(date).toLocaleTimeString("tr-TR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 </script>
 
 <template>
@@ -211,7 +277,11 @@ const formatMessageContent = (content) => {
       />
     </div>
 
-    <div ref="chatContainerRef" class="ai-chatbot__messages">
+    <div
+      ref="chatContainerRef"
+      class="ai-chatbot__messages"
+      @click="handleMessageClick"
+    >
       <template v-if="messages.length > 0">
         <div
           v-for="message in messages"
@@ -417,18 +487,60 @@ const formatMessageContent = (content) => {
   }
 }
 
+.code-apply-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background-color: $sompo-red !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 4px !important;
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+  z-index: 10 !important;
+  opacity: 0.8 !important;
+  transition: opacity 0.2s ease !important;
+
+  &:hover {
+    opacity: 1 !important;
+  }
+
+  .ai-chatbot--dark & {
+    background-color: #3a4860 !important;
+  }
+}
+
 :deep(.code-block) {
-  background-color: rgba(0, 0, 0, 0.05);
+  background-color: $sompo-light-platinum;
   border-radius: 6px;
-  padding: 8px 12px;
-  margin: 8px 0;
+  padding: 12px !important;
+  padding-top: 12px !important; /* Buton için ek padding */
+  margin: 0 !important;
   overflow-x: auto;
   font-family: monospace;
   white-space: pre;
   width: 100%;
+  display: block;
 
   .ai-chatbot--dark & {
     background-color: rgba(0, 0, 0, 0.3);
+  }
+}
+
+:deep(.code-apply-button) {
+  padding: 8px 12px !important;
+  border-radius: 4px !important;
+  background-color: #22c55e !important;
+  color: white !important;
+  transition: all 0.2s ease !important;
+
+  &:hover {
+    background-color: #16a34a !important;
+  }
+
+  &:active {
+    background-color: #15803d !important;
   }
 }
 

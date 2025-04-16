@@ -3,7 +3,7 @@ import { onMounted, onBeforeUnmount, ref, watch } from "vue";
 import { createMonacoEditor } from "@/services";
 import openAIService from "@/services/openaiService";
 import SaveFunction from "./SaveFunction.vue";
-import { useFunctionStore } from "@/stores";
+import { useFunctionStore, useEditorStore } from "@/stores";
 
 const props = defineProps({
   modelValue: {
@@ -20,6 +20,8 @@ const emit = defineEmits(["update:modelValue"]);
 
 // Function store'a erişim
 const functionStore = useFunctionStore();
+// Editor store'a erişim
+const editorStore = useEditorStore();
 
 const editorContainer = ref(null);
 let editorInstance = null;
@@ -115,6 +117,53 @@ const handleAIFormat = async () => {
   }
 };
 
+// Chatbot'tan gelen kodu editöre uygulama fonksiyonu
+const applyCodeFromChatbot = () => {
+  if (editorInstance && editorStore.hasPendingCode) {
+    try {
+      const formattedText = editorStore.formattedCode;
+
+      // Eğer formatlanmış kod varsa editöre uygula
+      if (formattedText) {
+        const model = editorInstance.getModel();
+        const fullRange = model.getFullModelRange();
+
+        // Tek bir düzenleme işlemi ile tüm metni değiştir
+        editorInstance.executeEdits("chatbot-code", [
+          {
+            range: fullRange,
+            text: formattedText,
+            forceMoveMarkers: true,
+          },
+        ]);
+
+        // Değişikliği parent bileşene ilet
+        emit("update:modelValue", formattedText);
+
+        // Buton durumlarını güncelle
+        updateButtonStates();
+
+        // Uygulandı olarak işaretle
+        editorStore.markAsApplied(true);
+      }
+    } catch (error) {
+      console.error("Chatbot kodu uygulama hatası:", error);
+      // Hata durumuna geç
+      editorStore.markAsApplied(false, error.message);
+    }
+  }
+};
+
+// EditorStore'da bekleyen kod değişikliğini izle
+watch(
+  () => editorStore.hasPendingCode,
+  (hasPendingCode) => {
+    if (hasPendingCode) {
+      applyCodeFromChatbot();
+    }
+  }
+);
+
 // Component mount olduğunda function store'dan kaydedilmiş fonksiyonları yükle
 onMounted(() => {
   // Editor oluşturuluyor
@@ -133,6 +182,11 @@ onMounted(() => {
   });
   // İlk yüklemede buton durumlarını ayarla
   updateButtonStates();
+
+  // Eğer başlangıçta bekleyen kod varsa uygula
+  if (editorStore.hasPendingCode) {
+    applyCodeFromChatbot();
+  }
 });
 
 // Model value dışarıdan güncellendiğinde editor içeriğini güncelle
@@ -195,6 +249,22 @@ onBeforeUnmount(() => {
       :code="editorInstance ? editorInstance.getValue() : ''"
       @save="handleSaveFunction"
     />
+
+    <!-- EditorStore'dan kod başarıyla uygulandığında gösterilecek bildirim -->
+    <div
+      v-if="editorStore.isApplied"
+      class="monaco-container__notification monaco-container__notification--success"
+    >
+      Kod başarıyla uygulandı!
+    </div>
+
+    <!-- EditorStore'dan kod uygulanırken hata oluştuğunda gösterilecek bildirim -->
+    <div
+      v-if="editorStore.error"
+      class="monaco-container__notification monaco-container__notification--error"
+    >
+      Hata: {{ editorStore.error }}
+    </div>
   </div>
 </template>
 
@@ -204,6 +274,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  position: relative;
 
   &__action-buttons {
     display: flex;
@@ -223,6 +294,40 @@ onBeforeUnmount(() => {
     border: 1px solid $sompo-medium-platinum;
     border-radius: $border-radius-xs;
     padding: 0.5px;
+  }
+
+  &__notification {
+    position: absolute;
+    top: 3rem;
+    right: 1rem;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    z-index: 10;
+    animation: fadeIn 0.3s ease-in-out;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+
+    &--success {
+      background-color: rgba(0, 200, 83, 0.9);
+      color: white;
+    }
+
+    &--error {
+      background-color: rgba(255, 0, 0, 0.9);
+      color: white;
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
