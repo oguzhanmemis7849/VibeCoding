@@ -3,8 +3,12 @@ import { ref, onMounted, nextTick } from "vue";
 import openAIService from "@/services/openaiService";
 import { useTheme } from "@/composables/useTheme";
 import chatbot from "@/prompts/chatbot.txt";
+import { useFunctionStore } from "@/stores/function";
+import { variables } from "@/helpers/monacoVariableList";
 // Tema bilgisini al
 const { isDark } = useTheme();
+
+const functionStore = useFunctionStore();
 
 // Chat durumu ve mesajlar
 const messages = ref([]);
@@ -69,7 +73,16 @@ const sendMessage = async () => {
 // AI yanıtını alma
 const getAIResponse = async () => {
   // Chatbot prompt'unu al
-  const chatbotPrompt = await fetch(chatbot).then((res) => res.text());
+  let chatbotPrompt = await fetch(chatbot).then((res) => res.text());
+
+  chatbotPrompt +=
+    "\n\n" +
+    "Güncel fonksiyonlarımız: " +
+    JSON.stringify(functionStore.functions) +
+    "\n\n";
+
+  chatbotPrompt +=
+    "\n\n" + "Güncel variables: " + JSON.stringify(variables) + "\n\n";
 
   // Mesaj geçmişini formatla
   const formattedMessages = [
